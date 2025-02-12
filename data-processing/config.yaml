@@ -1,0 +1,3 @@
+data:
+  raw_data_path: ../data
+  skip_lines: 23
