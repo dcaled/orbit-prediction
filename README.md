@@ -29,7 +29,7 @@ python main.py
 The Orbit prediction service is implemented using FastAPI. The API consists of a single endpoint that allows inference 
 requests for the satellite position in a given datetime.
 
-### Request
+### 3.1. Request
 
 The endpoint expects as input a JSON object containing only a string-formatted field `timestamp`:
 
@@ -50,10 +50,10 @@ The API response will be the position of the satellite in the following example 
 ```
 
 
-### Running the API
+### 3.2. Running the API (locally)
 
 To run your FastAPI application, follow these steps:
-1. From the project root folder
+1. Enter the project root folder
 2. Run the FastAPI Application using uvicorn to start the FastAPI server. 
 ```
 uvicorn model_api.app:app --host 0.0.0.0 --port 8000
@@ -61,3 +61,16 @@ uvicorn model_api.app:app --host 0.0.0.0 --port 8000
 3. Once running, access the API documentation at:
    - Swagger UI: http://127.0.0.1:8000/docs
    - Redoc: http://127.0.0.1:8000/redoc
+   
+### 3.3. Running the API (via Docker)
+
+1. Enter the project root folder
+2. Build the container by running
+```
+docker build . -t model_api
+```
+
+3. Run the image:
+```
+docker run -p 8000:8000 -d model_api
+ ```
