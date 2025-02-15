@@ -21,7 +21,7 @@ To run the data processing, navigate to the `data_processing` folder and execute
 
 ```sh
 cd data_processing
-python main.py
+python preprocess.py
 ```
 
 ## 3. API Deployment

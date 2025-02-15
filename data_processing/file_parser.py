@@ -9,21 +9,26 @@ class FileParser:
     A class for parsing orbit data from a compressed text file.
 
     Attributes:
+        space_object_id (str): Identifier of the space-object.
         file_path (str): The path to the gzip-compressed input file.
         skip_lines (int): The number of lines to skip at the beginning of the file.
         file_chunks (list): A list containing chunks of three lines each from the file.
         orbits (list): A list of Orbit objects parsed from the file.
     """
 
-    def __init__(self, file_path, skip_lines, logging_level="debug"):
+    def __init__(self, space_object_id, file_path, path_clean_data, skip_lines, logging_level="debug"):
         """
         Initializes the FileParser object and processes the file.
 
         Args:
+            space_object_id (str): Identifier of the space-object.
             file_path (str): The path to the gzip-compressed input file.
             skip_lines (int): The number of lines to skip at the beginning of the file.
         """
-        self.file_path = file_path
+
+        self.space_object_id = space_object_id
+        self.path_raw_data = file_path
+        self.path_clean_data = path_clean_data
         self.skip_lines = skip_lines
         self.logging_level = logging_level
         self.file_chunks = self.read_file_in_chunks()
@@ -40,7 +45,7 @@ class FileParser:
             list: A list of chunks, where each chunk is a list of three lines.
         """
         chunks = []
-        with gzip.open(self.file_path, 'rb') as file:
+        with gzip.open(self.path_raw_data, 'rb') as file:
             # Skip the first specified number of lines
             for _ in range(self.skip_lines):
                 next(file, None)
@@ -61,10 +66,10 @@ class FileParser:
         Returns:
             list: A list of Orbit objects.
         """
-        orbits = []
         for chunk in self.file_chunks:
-            orbits.append(self.parse_chunk(chunk))
-        return orbits
+            orbit = self.parse_chunk(chunk)
+            orbit.persist_orbit()
+        return
 
     def parse_chunk(self, chunk):
         """
@@ -80,8 +85,16 @@ class FileParser:
         x, y, z = self.parse_position(chunk[1].decode("utf-8"))
         vx, vy, vz = self.parse_velocity(chunk[2].decode("utf-8"))
 
-        orbit = Orbit(epoch=epoch, x=x, y=y, z=z, vx=vx, vy=vy, vz=vz)
-        logger.debug(orbit.__dict__)
+        orbit = Orbit(space_object_id=self.space_object_id,
+                      epoch=epoch,
+                      pos_x=x,
+                      pos_y=y,
+                      pos_z=z,
+                      vel_x=vx,
+                      vel_y=vy,
+                      vel_z=vz,
+                      path_data=self.path_clean_data)
+        # logger.info(orbit.__dict__)
         return orbit
 
     @staticmethod

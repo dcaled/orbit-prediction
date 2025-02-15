@@ -21,7 +21,9 @@ def list_files(directory):
 def main():
     # Load configuration
     config = load_config("../config.yaml")
-    path_raw_data = config["data"]["raw_data_path"]
+    space_object_id = config["space_object"]["id"]
+    path_raw_data = config["data"]["path_raw_data"]
+    path_clean_data = config["data"]["path_clean_data"]
     skip_lines = config["data"]["skip_lines"]
 
     files = list_files(path_raw_data)
@@ -30,7 +32,11 @@ def main():
     for i, file in enumerate(files):
         file_path = f"{path_raw_data}/{file}"
         logger.info(f"Processing file [{i + 1}/{n_files}] {file_path} started.")
-        orbits = FileParser(file_path=file_path, skip_lines=skip_lines).orbits
+
+        orbits = FileParser(space_object_id=space_object_id,
+                            file_path=file_path,
+                            path_clean_data=path_clean_data,
+                            skip_lines=skip_lines).orbits
         logger.info(f"Processing file [{i + 1}/{n_files}] {file_path} finished {len(orbits)} orbits found.")
     logger.info(f"File processing finished. {n_files} files parsed.")
 

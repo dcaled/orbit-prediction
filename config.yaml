@@ -1,4 +1,6 @@
+space_object:
+  id: larets
 data:
-  raw_data_path: ../data
-  clean_data_path: ../data
+  path_raw_data: ../data/larets/raw
+  path_clean_data: ../data/larets/clean
   skip_lines: 23
