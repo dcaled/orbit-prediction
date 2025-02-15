@@ -1,5 +1,5 @@
 import gzip
-from data_processing.setup_logger import logger
+from setup_logger import logger
 from datetime import datetime
 from orbit import Orbit
 
