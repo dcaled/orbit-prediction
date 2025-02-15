@@ -3,6 +3,9 @@
 # implement this data processing pipeline, automating it as much as possible. The actual download of the raw files
 # does not need to be in code.
 
+import sys
+sys.path.insert(0, '..')
+
 import os
 from utils import load_config
 from setup_logger import logger
@@ -33,11 +36,12 @@ def main():
         file_path = f"{path_raw_data}/{file}"
         logger.info(f"Processing file [{i + 1}/{n_files}] {file_path} started.")
 
-        orbits = FileParser(space_object_id=space_object_id,
-                            file_path=file_path,
-                            path_clean_data=path_clean_data,
-                            skip_lines=skip_lines).orbits
-        logger.info(f"Processing file [{i + 1}/{n_files}] {file_path} finished {len(orbits)} orbits found.")
+        FileParser(space_object_id=space_object_id,
+                   file_path=file_path,
+                   path_clean_data=path_clean_data,
+                   skip_lines=skip_lines)
+
+        logger.info(f"Processing file [{i + 1}/{n_files}] {file_path} finished.")
     logger.info(f"File processing finished. {n_files} files parsed.")
 
 

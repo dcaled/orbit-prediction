@@ -11,7 +11,7 @@ conda install --file requirements.txt
 The data processing module contains a configuration file where the user should specify the data path. By default, the data path is set to:
 
 ```
-../data
+../data/{space-object-id}/raw
 ```
 
 SP3-c raw files should be placed in this directory.
