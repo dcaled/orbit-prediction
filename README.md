@@ -31,21 +31,39 @@ requests for the satellite position in a given datetime.
 
 ### 3.1. Request
 
-The endpoint expects as input a JSON object containing only a string-formatted field `timestamp`:
+The endpoint expects as input a JSON object containing the space-object identifier and the number of predictions:
 
 Example:
 ```
 {
-    "timestamp": "2019-08-24T14:15:22Z"
+  "space_object_id": "larets",
+  "number_of_predictions": 3
 }
 ```
 
-The API response will be the position of the satellite in the following example format:
+The API response will be the predicted positions of the satellite in the following example format:
 ```
 {
-  "x": 5711.546000003815,
-  "y": 2855.7730000019073,
-  "z": 8570.515333294868
+  "positions": [
+    {
+      "epoch": "2025-02-15T11:33:11.036209",
+      "x": 1.2469855511354737,
+      "y": 2.858835514866617,
+      "z": 2.4171653647810856
+    },
+    {
+      "epoch": "2025-02-15T11:33:11.036209",
+      "x": 1.1569145397294214,
+      "y": 1.6031156355035945,
+      "z": 2.097456147037125
+    },
+    {
+      "epoch": "2025-02-15T11:33:11.036209",
+      "x": 1.756933762210285,
+      "y": 1.2102738414184224,
+      "z": 1.8378660689846575
+    }
+  ]
 }
 ```
 
