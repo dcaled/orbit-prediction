@@ -5,7 +5,7 @@
 
 import os
 import yaml
-from setup_logger import logger
+from data_processing.setup_logger import logger
 from file_parser import FileParser
 
 
