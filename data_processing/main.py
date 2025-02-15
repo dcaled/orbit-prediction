@@ -4,21 +4,9 @@
 # does not need to be in code.
 
 import os
-import yaml
+from utils import load_config
 from setup_logger import logger
 from file_parser import FileParser
-
-
-def load_config(file_path):
-    try:
-        with open(file_path, "r") as file:
-            return yaml.safe_load(file)
-    except FileNotFoundError:
-        print("Error: Configuration file not found.")
-    except yaml.YAMLError as e:
-        print(f"Error: Invalid YAML format - {e}")
-    return {}
-
 
 def list_files(directory):
     try:
@@ -32,7 +20,7 @@ def list_files(directory):
 
 def main():
     # Load configuration
-    config = load_config("config.yaml")
+    config = load_config("../config.yaml")
     path_raw_data = config["data"]["raw_data_path"]
     skip_lines = config["data"]["skip_lines"]
 
