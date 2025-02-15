@@ -4,3 +4,5 @@ data:
   path_raw_data: !join [../data/, *OBJECTID, /raw]
   path_clean_data: !join [../data/, *OBJECTID, /clean]
   skip_lines: 23
+models:
+  path: ../data/larets/models
