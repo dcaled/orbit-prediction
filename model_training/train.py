@@ -159,7 +159,7 @@ def pipeline(path_data: str = ""):
         path_data (str): Path to the dataset.
     """
     config = load_config("../config.yaml")
-    path_data = config["data"]["clean_data_path"]
+    path_data = config["data"]["path_clean_data"]
     path_models = config["models"]["path"]
 
     logger.info("Creating training set...")
