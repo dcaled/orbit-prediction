@@ -1,14 +1,45 @@
 import os
 import json
+from datetime import datetime
+from typing import Dict
 
 
 class Orbit:
-    def __init__(self, space_object_id, epoch, pos_x, pos_y, pos_z, vel_x, vel_y, vel_z, path_data):
+    """
+    A class to represent and store an orbit's state at a specific epoch.
+
+    This class encapsulates an object's position and velocity in space
+    and provides functionality to persist this data in a structured directory.
+
+    Attributes:
+        space_object_id (str): Identifier of the space object.
+        epoch (int): The epoch timestamp in milliseconds.
+        pos_x (float): X coordinate of the position.
+        pos_y (float): Y coordinate of the position.
+        pos_z (float): Z coordinate of the position.
+        vel_x (float): X component of velocity.
+        vel_y (float): Y component of velocity.
+        vel_z (float): Z component of velocity.
+        path_data (str): Base directory where data will be stored.
+    """
+
+    def __init__(
+        self,
+        space_object_id: str,
+        epoch: datetime,
+        pos_x: float,
+        pos_y: float,
+        pos_z: float,
+        vel_x: float,
+        vel_y: float,
+        vel_z: float,
+        path_data: str,
+    ):
         """
-        Initialize the Orbit object.
+        Initializes an Orbit object.
 
         Args:
-            space_object_id (str): Identifier of the space-object.
+            space_object_id (str): Identifier of the space object.
             epoch (datetime): The epoch timestamp.
             pos_x (float): X position.
             pos_y (float): Y position.
@@ -28,27 +59,40 @@ class Orbit:
         self.vel_z = vel_z
         self.path_data = path_data
 
-    def persist_orbit(self):
+    def to_dict(self) -> Dict[str, float]:
         """
-        Save the object's position and velocity data at a given timestamp.
+        Converts the Orbit object into a dictionary.
 
-        Data is stored in a structured directory:
+        Returns:
+            Dict[str, float]: A dictionary containing epoch, position, and velocity data.
+        """
+        return {
+            "epoch": self.epoch,
+            "pos_x": self.pos_x,
+            "pos_y": self.pos_y,
+            "pos_z": self.pos_z,
+            "vel_x": self.vel_x,
+            "vel_y": self.vel_y,
+            "vel_z": self.vel_z,
+        }
+
+    def persist_orbit(self) -> str:
+        """
+        Saves the orbit's position and velocity data in a structured JSON format.
+
+        The directory structure is:
         {path_data}/{space_object_id}/{epoch}.json
 
-        The saved data contains position and velocity vectors.
+        Returns:
+            str: The file path where the data was saved.
         """
-        # Define the directory path
-        object_dir = os.path.join(self.path_data, self.space_object_id)
-        os.makedirs(object_dir, exist_ok=True)  # Ensure directory exists
+        # Ensure directory exists
+        os.makedirs(self.path_data, exist_ok=True)
 
-        # Define the file path
-        file_path = os.path.join(object_dir, f"{self.epoch}.json")
+        file_path = os.path.join(self.path_data, f"{self.epoch}.json")
 
-        # Create a dictionary with position and velocity data
-        orbit_data = self.__dict__
-
-        # Save the data as a JSON file
+        # Save data to JSON
         with open(file_path, "w") as f:
-            json.dump(orbit_data, f, indent=4)
+            json.dump(self.to_dict(), f, indent=4)
 
-        print(f"Orbit data saved to {file_path}")
+        return file_path
