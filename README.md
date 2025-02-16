@@ -8,21 +8,57 @@ conda install --file requirements.txt
 ```
 
 ## 1. Data Processing Module
-The data processing module contains a configuration file where the user should specify the data path. By default, the data path is set to:
+The data processing module contains a configuration file where the user should specify the data path. By default, the 
+data path is set to:
 
 ```
-../data/{space-object-id}/raw
+data:
+   path_raw_data: ../data/{space-object-id}/raw
 ```
 
 SP3-c raw files should be placed in this directory.
 
-### Running the Data Processing
+You should also specify the path in which the clean data will be stored. Example:
+
+```
+data:
+   path_clean_data: ../data/{space-object-id}/clean
+```
+
+### 1.1. Running the Data Processing
 To run the data processing, navigate to the `data_processing` folder and execute the following command:
 
 ```sh
 cd data_processing
 python preprocess.py
 ```
+
+## 2. Model training
+
+To train a model, you should configure the file `config.yaml` with the following parameters:
+
+Path to where you store the clean data. Example:
+```
+data:
+   path_clean_data: ../data/{space-object-id}/clean
+```
+
+Path to where the new models should be stored. Example:
+```
+models:
+  path: ../data/{space-object-id}/models
+```
+
+### 2.1. Running model training
+
+To run the data processing, navigate to the `model_training` folder and execute the following command:
+
+```sh
+cd model_training
+python train.py
+```
+
+Three different models will be created, one for predicting each space-object's orbit position (`x,y,z`).
 
 ## 3. API Deployment
 

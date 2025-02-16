@@ -27,7 +27,7 @@ class FileParser:
         """
 
         self.space_object_id = space_object_id
-        self.path_raw_data = file_path
+        self.file_path = file_path
         self.path_clean_data = path_clean_data
         self.skip_lines = skip_lines
         self.logging_level = logging_level
@@ -45,7 +45,7 @@ class FileParser:
             list: A list of chunks, where each chunk is a list of three lines.
         """
         chunks = []
-        with gzip.open(self.path_raw_data, 'rb') as file:
+        with gzip.open(self.file_path, 'rb') as file:
             # Skip the first specified number of lines
             for _ in range(self.skip_lines):
                 next(file, None)
@@ -56,7 +56,7 @@ class FileParser:
                 # Stop when the end of file is reached
                 if lines == [b'EOF', b'', b'']:
                     break
-                chunks.append(lines)
+                chunks+=[lines]
         return chunks
 
     def parse_chunks(self):

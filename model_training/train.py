@@ -1,181 +1,174 @@
+# Now that the historical data is ready, we can move to the modelling phase. In this part, you are tasked with training
+# and evaluating a model that predicts the future positions of an object, given as input the current position. You can
+# tailor the input features as you see fit. For example, you may require as input more than one previous position, the
+# velocity vector, or other external features from other data sources. Because this assignment is meant as a basis for
+# discussion, we recommend you stick to the analysis of a single model.
+
+import sys
+sys.path.insert(0, '..')
+
+import json
 import os
+from typing import Tuple, Dict
 
 import joblib
-
-from utils import load_config
-
 import numpy as np
 import pandas as pd
 from sklearn.linear_model import LinearRegression
-from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error
-from typing import Tuple, Dict
 
 from setup_logger import logger
+from utils import load_config
 
 
-def create_training_set(path_data: str) -> Tuple[pd.DataFrame, pd.DataFrame]:
-    """
-    Reads dataset from the specified path and prepares training data.
+class OrbitPredictionModel:
+    def __init__(self, config_path: str):
+        """
+        Initializes the OrbitPredictionModel class with configuration parameters.
 
-    Args:
-        path_data (str): Path to the dataset.
-
-    Returns:
-        Tuple[pd.DataFrame, pd.DataFrame]: Feature matrix (X) and target values (Y).
-    """
-    # Replace this with actual file reading logic
-    np.random.seed(42)
-    num_records = 1000
-    time = np.arange(num_records)
-    x = np.random.uniform(-10, 10, num_records)
-    y = np.random.uniform(-10, 10, num_records)
-    z = np.random.uniform(-10, 10, num_records)
-    vx = np.random.uniform(-1, 1, num_records)
-    vy = np.random.uniform(-1, 1, num_records)
-    vz = np.random.uniform(-1, 1, num_records)
-
-    df = pd.DataFrame({
-        "epoch": time,
-        "pos_x": x,
-        "pos_y": y,
-        "pos_z": z,
-        "vel_x": vx,
-        "vel_y": vy,
-        "vel_z": vz,
-    })
-
-    # Drop last row to align X and Y properly
-    X = df.iloc[:-1, 1:]  # Exclude "epoch"
-    Y = df[["pos_x", "pos_y", "pos_z"]].shift(-1).dropna()
-
-    return X, Y
+        Args:
+            config_path (str): Path to the configuration YAML file.
+        """
+        self.config = load_config(config_path)
+        self.path_data = self.config["data"]["path_clean_data"]
+        self.path_models = self.config["models"]["path"]
+        self.models = {}
 
 
-def create_splits(X: pd.DataFrame, Y: pd.DataFrame) -> Tuple[
-    pd.DataFrame, pd.DataFrame, Dict[str, np.ndarray], Dict[str, np.ndarray]]:
-    """
-    Splits data into training and testing sets.
+    def load_orbits_from_folder(self) -> pd.DataFrame:
+        """
+        Reads all persisted orbit data from a given folder and loads it into a Pandas DataFrame.
 
-    Args:
-        X (pd.DataFrame): Feature matrix.
-        Y (pd.DataFrame): Target variables.
+        Returns:
+            pd.DataFrame: A DataFrame containing all loaded orbit data.
+        """
+        orbit_data = []
+        for filename in os.listdir(self.path_data):
+            if filename.endswith(".json"):
+                with open(os.path.join(self.path_data, filename), "r") as f:
+                    orbit_data+=[json.load(f)]
 
-    Returns:
-        Tuple: Training and test sets for X and Y.
-    """
-    x_train, x_test = train_test_split(X, test_size=0.2, random_state=42)
-    y_train = {}
-    y_test = {}
-    for col in Y.columns:
-        y_train[col], y_test[col] = train_test_split(Y[col], test_size=0.2, random_state=42)
-    return x_train, x_test, y_train, y_test
+        if not orbit_data:
+            logger.warning("No orbit data found.")
+            return pd.DataFrame()
 
-
-
-def fit_model(x_train: pd.DataFrame, y_train: Dict[str, np.ndarray], path_models) -> Dict[str, LinearRegression]:
-    """
-    Trains a separate Linear Regression model for each target variable and saves them.
-
-    Args:
-        x_train (pd.DataFrame): Training feature matrix.
-        y_train (Dict[str, np.ndarray]): Dictionary of training targets.
-
-    Returns:
-        Dict[str, LinearRegression]: Trained models for each target variable.
-    """
-    os.makedirs(path_models, exist_ok=True)  # Ensure model directory exists
-
-    models = {}
-    for col in y_train:
-        model_path = os.path.join(path_models, f"{col}_model.pkl")
-
-        if os.path.exists(model_path):
-            logger.info(f"Loading existing model for {col}...")
-            models[col] = joblib.load(model_path)
-        else:
-            logger.info(f"Training new model for {col}...")
-            model = LinearRegression().fit(x_train, y_train[col])
-            joblib.dump(model, model_path)  # Save model
-            models[col] = model
-
-    return models
+        return pd.json_normalize(orbit_data)
 
 
-def load_models(path_models) -> Dict[str, LinearRegression]:
-    """
-    Loads all saved models from disk.
+    @staticmethod
+    def create_temporal_splits(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
+        """
+        Splits the data temporally into training (80%) and testing (20%) sets.
 
-    Returns:
-        Dict[str, LinearRegression]: Dictionary of loaded models.
-    """
-    models = {}
-    for axis in ["pos_x", "pos_y", "pos_z"]:
-        model_path = os.path.join(path_models, f"{axis}_model.pkl")
-        if os.path.exists(model_path):
-            logger.info(f"Loading model for {axis}...")
-            models[axis] = joblib.load(model_path)
-        else:
-            raise FileNotFoundError(f"Model for {axis} not found. Train the model first.")
+        Returns:
+            Tuple[pd.DataFrame, pd.DataFrame]: Training and testing datasets.
+        """
+        df = df.sort_values("epoch")
+        split_time = df["epoch"].quantile(0.8)
 
-    return models
+        train_data = df[df["epoch"] < split_time]
+        test_data = df[df["epoch"] >= split_time]
 
-def predict(models: Dict[str, LinearRegression], x_test: pd.DataFrame) -> Dict[str, np.ndarray]:
-    """
-    Predicts outputs for each model.
-
-    Args:
-        models (Dict[str, LinearRegression]): Trained models.
-        x_test (pd.DataFrame): Test feature matrix.
-
-    Returns:
-        Dict[str, np.ndarray]: Predictions for each target variable.
-    """
-    return {col: models[col].predict(x_test) for col in models}
+        return train_data, test_data
 
 
-def evaluate_model(models: Dict[str, LinearRegression], x_test: pd.DataFrame, y_test: Dict[str, np.ndarray]) -> Dict[
-    str, float]:
-    """
-    Evaluates models using Mean Squared Error.
+    @staticmethod
+    def create_training_set(df: pd.DataFrame) -> Tuple[pd.DataFrame, np.ndarray, np.ndarray, np.ndarray]:
+        """
+        Prepare the feature matrix X and target vectors y_x, y_y, y_z.
 
-    Args:
-        models (Dict[str, LinearRegression]): Trained models.
-        x_test (pd.DataFrame): Test feature matrix.
-        y_test (Dict[str, np.ndarray]): True values for the test set.
+        Returns:
+            Tuple[pd.DataFrame, np.ndarray, np.ndarray, np.ndarray]: Feature matrix and target values.
+        """
+        # Create delta_time as the difference between the record time and the initial time.
+        epoch_min = df["epoch"].min()
+        df["delta_time"] = df["epoch"] - epoch_min
 
-    Returns:
-        Dict[str, float]: Mean Squared Error for each model.
-    """
-    y_pred = predict(models, x_test)
-    return {col: mean_squared_error(y_test[col], y_pred[col]) for col in models}
+        # Drop the last row to align X and Y properly for prediction
+        X = df.iloc[:-1, :]
 
+        # Target variables are the next position (shifted by one)
+        y_pos_x = df["pos_x"].shift(-1).dropna()
+        y_pos_y = df["pos_y"].shift(-1).dropna()
+        y_pos_z = df["pos_z"].shift(-1).dropna()
 
-def pipeline(path_data: str = ""):
-    """
-    Full data processing and model training pipeline.
-
-    Args:
-        path_data (str): Path to the dataset.
-    """
-    config = load_config("../config.yaml")
-    path_data = config["data"]["path_clean_data"]
-    path_models = config["models"]["path"]
-
-    logger.info("Creating training set...")
-    data_x, data_y = create_training_set(path_data)
-
-    logger.info("Splitting data...")
-    x_train, x_test, y_train, y_test = create_splits(data_x, data_y)
-
-    logger.info("Training models...")
-    models = fit_model(x_train, y_train, path_models)
-
-    logger.info("Evaluating models...")
-    mses = evaluate_model(models, x_test, y_test)
-
-    logger.info(f"Mean Squared Errors: {mses}")
+        return X, y_pos_x, y_pos_y, y_pos_z
 
 
-if __name__ == '__main__':
-    pipeline()
+    def fit_model(self, x_train: pd.DataFrame, y_train_x: np.ndarray, y_train_y: np.ndarray, y_train_z: np.ndarray):
+        """
+        Trains separate Linear Regression models for each target variable and saves them.
+
+        Args:
+            x_train (pd.DataFrame): Feature matrix.
+            y_train_x, y_train_y, y_train_z (np.ndarray): Target vectors for each position.
+        """
+        # Ensure model directory exists
+        os.makedirs(self.path_models, exist_ok=True)
+
+        # Fit and save model for each target variable
+        self.models["pos_x"] = LinearRegression().fit(x_train, y_train_x)
+        joblib.dump(self.models["pos_x"], os.path.join(self.path_models, "model_pos_x.pkl"))
+
+        self.models["pos_y"] = LinearRegression().fit(x_train, y_train_y)
+        joblib.dump(self.models["pos_y"], os.path.join(self.path_models, "model_pos_y.pkl"))
+
+        self.models["pos_z"] = LinearRegression().fit(x_train, y_train_z)
+        joblib.dump(self.models["pos_z"], os.path.join(self.path_models, "model_pos_z.pkl"))
+
+
+    def predict(self, x_test: pd.DataFrame) -> Dict[str, np.ndarray]:
+        """
+        Predicts outputs for each model.
+
+        Args:
+            x_test (pd.DataFrame): Test feature matrix.
+
+        Returns:
+            Dict[str, np.ndarray]: Predictions for each target variable.
+        """
+        return {col: self.models[col].predict(x_test) for col in self.models}
+
+    def evaluate(self, x_test: pd.DataFrame, y_test: Dict[str, np.ndarray]) -> Dict[str, float]:
+        """
+        Evaluates models using Mean Squared Error.
+
+        Args:
+            x_test (pd.DataFrame): Test feature matrix.
+            y_test (Dict[str, np.ndarray]): True values for the test set.
+
+        Returns:
+            Dict[str, float]: Mean Squared Error for each model.
+        """
+        y_pred = self.predict(x_test)
+        return {col: mean_squared_error(y_test[col], y_pred[col]) for col in self.models}
+
+
+
+    def run_pipeline(self):
+        """
+        Executes the entire data processing and model training pipeline.
+        """
+        logger.info("Loading data from storage...")
+        df = self.load_orbits_from_folder()
+
+        logger.info("Creating temporal splits...")
+        train_data, test_data = self.create_temporal_splits(df)
+        logger.info(f"Training data shape: {train_data.shape}")
+        logger.info(f"Test data shape: {test_data.shape}")
+
+        logger.info("Creating training and test sets...")
+        x_train, y_train_pos_x, y_train_pos_y, y_train_pos_z = self.create_training_set(train_data)
+        x_test, y_test_pos_x, y_test_pos_y, y_test_pos_z = self.create_training_set(test_data)
+
+        logger.info("Training models...")
+        self.fit_model(x_train, y_train_pos_x, y_train_pos_y, y_train_pos_z)
+
+        logger.info("Evaluating models...")
+        mse_scores = self.evaluate(x_test, {"pos_x": y_test_pos_x, "pos_y": y_test_pos_y, "pos_z": y_test_pos_z})
+        logger.info(f"Mean Squared Errors: {mse_scores}")
+
+
+if __name__ == "__main__":
+    model = OrbitPredictionModel("../config.yaml")
+    model.run_pipeline()
