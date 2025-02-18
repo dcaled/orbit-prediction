@@ -1,4 +1,3 @@
-import random
 from typing import List
 
 from fastapi import FastAPI
@@ -85,13 +84,13 @@ def get_space_object_position(request: ObjectPositionRequest):
         ObjectPositionList: List of positions containing epoch, x, y, and z coordinates.
     """
     last_position = {
-        "epoch": 1739307420000,
-        "pos_x": -2.787127,
-        "pos_y": 5994.151251,
-        "pos_z": 3726.167103,
-        "vel_x": 17226.162,
-        "vel_y": -39257.044,
-        "vel_z": 62793.22
+        "epoch": request.epoch.timestamp()*1000,
+        "pos_x": request.pos_x,
+        "pos_y": request.pos_y,
+        "pos_z": request.pos_z,
+        "vel_x": request.vel_x,
+        "vel_y": request.vel_y,
+        "vel_z": request.vel_z
     }
 
     future_positions = []
