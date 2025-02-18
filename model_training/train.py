@@ -4,11 +4,12 @@
 # velocity vector, or other external features from other data sources. Because this assignment is meant as a basis for
 # discussion, we recommend you stick to the analysis of a single model.
 
+import os
 import sys
 sys.path.insert(0, '..')
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 import json
-import os
 from typing import Tuple, Dict
 
 import joblib
@@ -186,5 +187,5 @@ class OrbitPredictionModel:
 
 
 if __name__ == "__main__":
-    model = OrbitPredictionModel("../config.yaml")
+    model = OrbitPredictionModel("config.yaml")
     model.run_pipeline()

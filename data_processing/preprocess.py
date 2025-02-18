@@ -3,10 +3,11 @@
 # implement this data processing pipeline, automating it as much as possible. The actual download of the raw files
 # does not need to be in code.
 
+import os
 import sys
 sys.path.insert(0, '..')
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-import os
 from utils import load_config
 from setup_logger import logger
 from file_parser import FileParser
@@ -23,7 +24,7 @@ def list_files(directory):
 
 def main():
     # Load configuration
-    config = load_config("../config.yaml")
+    config = load_config("config.yaml")
     space_object_id = config["space_object"]["id"]
     path_raw_data = config["data"]["path_raw_data"]
     path_clean_data = config["data"]["path_clean_data"]

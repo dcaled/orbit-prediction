@@ -1,8 +1,8 @@
 space_object:
   id: &OBJECTID larets
 data:
-  path_raw_data: !join [../data/, *OBJECTID, /raw]
-  path_clean_data: !join [../data/, *OBJECTID, /clean]
+  path_raw_data: !join [data/, *OBJECTID, /raw]
+  path_clean_data: !join [data/, *OBJECTID, /clean]
   skip_lines: 23
 models:
   path_models: data/larets/models

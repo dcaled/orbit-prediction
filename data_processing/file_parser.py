@@ -1,7 +1,6 @@
 import gzip
 from typing import List, Tuple
 
-from setup_logger import logger
 from datetime import datetime
 from orbit import Orbit
 
