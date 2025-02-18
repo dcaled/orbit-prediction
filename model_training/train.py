@@ -57,8 +57,7 @@ class OrbitPredictionModel:
         return pd.json_normalize(orbit_data)
 
 
-    @staticmethod
-    def create_temporal_splits(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    def create_temporal_splits(self, df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
         """
         Splits the data temporally into training (80%) and testing (20%) sets.
 
@@ -66,14 +65,20 @@ class OrbitPredictionModel:
             Tuple[pd.DataFrame, pd.DataFrame]: Training and testing datasets.
         """
         df = df.sort_values("epoch")
+        epoch_min = df["epoch"].min()
+
+        logger.info("Saving the first training position...")
+        self.save_first_position(df[df["epoch"] == epoch_min])
 
         # Create delta_time as the difference between the record time and the initial time.
-        epoch_min = df["epoch"].min()
         df["delta_time"] = df["epoch"] - epoch_min
 
         split_time = df["epoch"].quantile(0.8)
         train_data = df[df["epoch"] < split_time]
         test_data = df[df["epoch"] >= split_time]
+
+        train_data = train_data.drop(columns=["epoch"])
+        test_data = test_data.drop(columns=["epoch"])
 
         return train_data, test_data
 
@@ -147,14 +152,13 @@ class OrbitPredictionModel:
         y_pred = self.predict(x_test)
         return {col: mean_squared_error(y_test[col], y_pred[col]) for col in self.models}
 
-    def save_first_position(self, df):
+    def save_first_position(self, first_position):
         """
         Saves the first position to a specified file, overwriting it if it exists.
 
         Args:
-            df (pd.DataFrame): Feature matrix.
+            first_position (pd.DataFrame): Dataframe containing the first known position of the space-object.
         """
-        first_position = df[df["epoch"]==df["epoch"].min()]
         first_position.to_json(self.path_first_position, orient='records', lines=True)
         logger.info(f"First training position saved to {self.path_first_position}")
 
@@ -169,9 +173,6 @@ class OrbitPredictionModel:
         train_data, test_data = self.create_temporal_splits(df)
         logger.info(f"Training data shape: {train_data.shape}")
         logger.info(f"Test data shape: {test_data.shape}")
-
-        logger.info("Saving the first training position...")
-        self.save_first_position(train_data)
 
         logger.info("Creating training and test sets...")
         x_train, y_train_pos_x, y_train_pos_y, y_train_pos_z = self.create_training_set(train_data)

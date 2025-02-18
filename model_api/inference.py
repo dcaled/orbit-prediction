@@ -43,7 +43,7 @@ class OrbitInference:
         """
         models = {}
         for axis in ["pos_x", "pos_y", "pos_z"]:
-            model_path = os.path.join(self.path_models, f"{axis}_model.pkl")
+            model_path = os.path.join(self.path_models, f"model_{axis}.pkl")
             if os.path.exists(model_path):
                 logger.info(f"Loading model for {axis}...")
                 models[axis] = joblib.load(model_path)
@@ -92,8 +92,8 @@ class OrbitInference:
             pred_time = epoch_last + (i * self.delta * 1000)
             delta_time = (pred_time - t_min)
 
-            X_pred = pd.DataFrame([[pred_time, pos_x, pos_y, pos_z, vel_x, vel_y, vel_z, delta_time]],
-                                  columns=["epoch", "pos_x", "pos_y", "pos_z", "vel_x", "vel_y", "vel_z", "delta_time"])
+            X_pred = pd.DataFrame([[pos_x, pos_y, pos_z, vel_x, vel_y, vel_z, delta_time]],
+                                  columns=["pos_x", "pos_y", "pos_z", "vel_x", "vel_y", "vel_z", "delta_time"])
 
             prediction = self.predict(X_pred)
             pos_x_pred, pos_y_pred, pos_z_pred = prediction["pos_x"][0], prediction["pos_y"][0], prediction["pos_z"][0]
