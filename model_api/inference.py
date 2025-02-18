@@ -1,3 +1,11 @@
+import sys
+sys.path.insert(0, '..')
+
+import os
+cwd = os.getcwd()
+print(cwd)
+print(os.listdir(cwd))
+
 import json
 import os
 import joblib
@@ -8,6 +16,7 @@ from typing import Dict, List, Any
 from setup_logger import logger
 from utils import load_config
 from sklearn.linear_model import LinearRegression
+
 
 
 class OrbitInference:
@@ -96,9 +105,9 @@ class OrbitInference:
 
             future_predictions+=[{
                 "epoch": pred_time,
-                "x": pos_x_pred,
-                "y": pos_y_pred,
-                "z": pos_z_pred
+                "pos_x": pos_x_pred,
+                "pos_y": pos_y_pred,
+                "pos_z": pos_z_pred
             }]
 
             pos_x, pos_y, pos_z = pos_x_pred, pos_y_pred, pos_z_pred
