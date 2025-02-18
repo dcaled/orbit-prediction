@@ -13,7 +13,7 @@ data path is set to:
 
 ```
 data:
-   path_raw_data: ../data/{space-object-id}/raw
+   path_raw_data: data/{space-object-id}/raw
 ```
 
 SP3-c raw files should be placed in this directory.
@@ -22,15 +22,14 @@ You should also specify the path in which the clean data will be stored. Example
 
 ```
 data:
-   path_clean_data: ../data/{space-object-id}/clean
+   path_clean_data: data/{space-object-id}/clean
 ```
 
 ### 1.1. Running the Data Processing
-To run the data processing, navigate to the `data_processing` folder and execute the following command:
+To run the data processing, navigate to the root folder and execute the following command:
 
 ```sh
-cd data_processing
-python preprocess.py
+python data_processing\preprocess.py
 ```
 
 ## 2. Model training
@@ -40,22 +39,21 @@ To train a model, you should configure the file `config.yaml` with the following
 Path to where you store the clean data. Example:
 ```
 data:
-   path_clean_data: ../data/{space-object-id}/clean
+   path_clean_data: data/{space-object-id}/clean
 ```
 
 Path to where the new models should be stored. Example:
 ```
 models:
-  path: ../data/{space-object-id}/models
+  path: data/{space-object-id}/models
 ```
 
 ### 2.1. Running model training
 
-To run the data processing, navigate to the `model_training` folder and execute the following command:
+To run the data processing, navigate to the root folder and execute the following command:
 
 ```sh
-cd model_training
-python train.py
+python model_training\train.py
 ```
 
 Three different models will be created, one for predicting each space-object's orbit position (`x,y,z`).
@@ -67,42 +65,52 @@ requests for the satellite position in a given datetime.
 
 ### 3.1. Request
 
-The endpoint expects as input a JSON object containing the space-object identifier and the number of predictions:
+The endpoint expects as input a JSON object containing the space-object identifier and the last position of this object:
 
 Example:
 ```
 {
   "space_object_id": "larets",
-  "number_of_predictions": 3
+  "epoch": "2025-02-18T07:00:34.583Z",
+  "pos_x": -2.787127,
+  "pos_y": 5994.151251,
+  "pos_z": 3726.167103,
+  "vel_x": 17226.162,
+  "vel_y": -39257.044,
+  "vel_z": 62793.22
 }
 ```
 
 The API response will be the predicted positions of the satellite in the following example format:
 ```
 {
+  "space_object_id": "larets",
   "positions": [
     {
-      "epoch": "2025-02-15T11:33:11.036209",
-      "x": 1.2469855511354737,
-      "y": 2.858835514866617,
-      "z": 2.4171653647810856
+      "epoch": "2025-02-18T07:00:34.583000",
+      "pos_x": 295.064743646789,
+      "pos_y": 5178.821646016164,
+      "pos_z": 4780.961592038952
     },
+      ...
     {
-      "epoch": "2025-02-15T11:33:11.036209",
-      "x": 1.1569145397294214,
-      "y": 1.6031156355035945,
-      "z": 2.097456147037125
-    },
-    {
-      "epoch": "2025-02-15T11:33:11.036209",
-      "x": 1.756933762210285,
-      "y": 1.2102738414184224,
-      "z": 1.8378660689846575
+      "epoch": "2025-02-18T07:09:34.583000",
+      "pos_x": 2748.6403603933686,
+      "pos_y": -1521.157660367164,
+      "pos_z": 13447.5371847854
     }
   ]
 }
 ```
 
+By default, the number of future position predictions and the time step between predictions are respectively defined as
+`10` and `60` seconds. These parameters can be modified in the configuration file:
+
+```
+inference:
+  number_of_predictions: 10
+  delta: 60
+```
 
 ### 3.2. Running the API (locally)
 
