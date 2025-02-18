@@ -1,4 +1,6 @@
 import gzip
+from typing import List, Tuple
+
 from setup_logger import logger
 from datetime import datetime
 from orbit import Orbit
@@ -16,7 +18,7 @@ class FileParser:
         orbits (list): A list of Orbit objects parsed from the file.
     """
 
-    def __init__(self, space_object_id, file_path, path_clean_data, skip_lines, logging_level="debug"):
+    def __init__(self, space_object_id: str, file_path: str, path_clean_data: str, skip_lines: int) -> None:
         """
         Initializes the FileParser object and processes the file.
 
@@ -30,11 +32,10 @@ class FileParser:
         self.file_path = file_path
         self.path_clean_data = path_clean_data
         self.skip_lines = skip_lines
-        self.logging_level = logging_level
         self.file_chunks = self.read_file_in_chunks()
         self.orbits = self.parse_chunks()
 
-    def read_file_in_chunks(self, chunk_size=3):
+    def read_file_in_chunks(self, chunk_size: int = 3) -> List[List[bytes]]:
         """
         Reads the file and splits it into chunks of three lines each.
 
@@ -71,7 +72,7 @@ class FileParser:
             orbit.persist_orbit()
         return
 
-    def parse_chunk(self, chunk):
+    def parse_chunk(self, chunk: List[bytes]) -> Orbit:
         """
         Parses a single chunk into an Orbit object.
 
@@ -98,7 +99,7 @@ class FileParser:
         return orbit
 
     @staticmethod
-    def convert_datetime_format(date_string):
+    def convert_datetime_format(date_string: str) -> datetime:
         """
         Converts a date string into a datetime object.
 
@@ -114,7 +115,7 @@ class FileParser:
         return datetime(year, month, day, hour, minute, second, microsecond)
 
     @staticmethod
-    def parse_position(position_string):
+    def parse_position(position_string: str) -> Tuple[float, float, float]:
         """
         Parses a position string into x, y, and z coordinates.
 
@@ -129,7 +130,7 @@ class FileParser:
         return x, y, z
 
     @staticmethod
-    def parse_velocity(velocity_string):
+    def parse_velocity(velocity_string: str) -> Tuple[float, float, float]:
         """
         Parses a velocity string into vx, vy, and vz components.
 
