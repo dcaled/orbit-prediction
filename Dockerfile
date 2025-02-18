@@ -1,4 +1,4 @@
-FROM python:3.12.9-alpine3.21
+FROM python:3.12-slim
 
 # Set the working directory
 WORKDIR /model_api
@@ -7,6 +7,7 @@ WORKDIR /model_api
 COPY requirements.txt ./
 
 # Install dependencies
+RUN pip install --upgrade pip
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the application code
