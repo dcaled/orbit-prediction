@@ -1,11 +1,6 @@
 import sys
 sys.path.insert(0, '..')
 
-import os
-cwd = os.getcwd()
-print(cwd)
-print(os.listdir(cwd))
-
 import json
 import os
 import joblib
