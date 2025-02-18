@@ -31,7 +31,8 @@ class OrbitPredictionModel:
         """
         self.config = load_config(config_path)
         self.path_data = self.config["data"]["path_clean_data"]
-        self.path_models = self.config["models"]["path"]
+        self.path_first_position = self.config["models"]["path_first_position"]
+        self.path_models = self.config["models"]["path_models"]
         self.models = {}
 
 
@@ -64,8 +65,12 @@ class OrbitPredictionModel:
             Tuple[pd.DataFrame, pd.DataFrame]: Training and testing datasets.
         """
         df = df.sort_values("epoch")
-        split_time = df["epoch"].quantile(0.8)
 
+        # Create delta_time as the difference between the record time and the initial time.
+        epoch_min = df["epoch"].min()
+        df["delta_time"] = df["epoch"] - epoch_min
+
+        split_time = df["epoch"].quantile(0.8)
         train_data = df[df["epoch"] < split_time]
         test_data = df[df["epoch"] >= split_time]
 
@@ -75,14 +80,11 @@ class OrbitPredictionModel:
     @staticmethod
     def create_training_set(df: pd.DataFrame) -> Tuple[pd.DataFrame, np.ndarray, np.ndarray, np.ndarray]:
         """
-        Prepare the feature matrix X and target vectors y_x, y_y, y_z.
+        Prepare the feature matrix X and target vectors y_pos_x, y_pos_y, y_pos_z.
 
         Returns:
             Tuple[pd.DataFrame, np.ndarray, np.ndarray, np.ndarray]: Feature matrix and target values.
         """
-        # Create delta_time as the difference between the record time and the initial time.
-        epoch_min = df["epoch"].min()
-        df["delta_time"] = df["epoch"] - epoch_min
 
         # Drop the last row to align X and Y properly for prediction
         X = df.iloc[:-1, :]
@@ -95,25 +97,26 @@ class OrbitPredictionModel:
         return X, y_pos_x, y_pos_y, y_pos_z
 
 
-    def fit_model(self, x_train: pd.DataFrame, y_train_x: np.ndarray, y_train_y: np.ndarray, y_train_z: np.ndarray):
+    def fit_model(self, x_train: pd.DataFrame, y_train_pos_x: np.ndarray, y_train_pos_y: np.ndarray,
+                  y_train_pos_z: np.ndarray):
         """
-        Trains separate Linear Regression models for each target variable and saves them.
+        Trains separate Linear Regression models with hyperparameter tuning for each target variable and saves them.
 
         Args:
             x_train (pd.DataFrame): Feature matrix.
-            y_train_x, y_train_y, y_train_z (np.ndarray): Target vectors for each position.
+            y_train_pos_x, y_train_pos_y, y_train_pos_z (np.ndarray): Target vectors for each position.
         """
         # Ensure model directory exists
         os.makedirs(self.path_models, exist_ok=True)
 
         # Fit and save model for each target variable
-        self.models["pos_x"] = LinearRegression().fit(x_train, y_train_x)
+        self.models["pos_x"] = LinearRegression().fit(x_train, y_train_pos_x)
         joblib.dump(self.models["pos_x"], os.path.join(self.path_models, "model_pos_x.pkl"))
 
-        self.models["pos_y"] = LinearRegression().fit(x_train, y_train_y)
+        self.models["pos_y"] = LinearRegression().fit(x_train, y_train_pos_y)
         joblib.dump(self.models["pos_y"], os.path.join(self.path_models, "model_pos_y.pkl"))
 
-        self.models["pos_z"] = LinearRegression().fit(x_train, y_train_z)
+        self.models["pos_z"] = LinearRegression().fit(x_train, y_train_pos_z)
         joblib.dump(self.models["pos_z"], os.path.join(self.path_models, "model_pos_z.pkl"))
 
 
@@ -143,7 +146,16 @@ class OrbitPredictionModel:
         y_pred = self.predict(x_test)
         return {col: mean_squared_error(y_test[col], y_pred[col]) for col in self.models}
 
+    def save_first_position(self, df):
+        """
+        Saves the first position to a specified file, overwriting it if it exists.
 
+        Args:
+            df (pd.DataFrame): Feature matrix.
+        """
+        first_position = df[df["epoch"]==df["epoch"].min()]
+        first_position.to_json(self.path_first_position, orient='records', lines=True)
+        logger.info(f"First training position saved to {self.path_first_position}")
 
     def run_pipeline(self):
         """
@@ -157,6 +169,9 @@ class OrbitPredictionModel:
         logger.info(f"Training data shape: {train_data.shape}")
         logger.info(f"Test data shape: {test_data.shape}")
 
+        logger.info("Saving the first training position...")
+        self.save_first_position(train_data)
+
         logger.info("Creating training and test sets...")
         x_train, y_train_pos_x, y_train_pos_y, y_train_pos_z = self.create_training_set(train_data)
         x_test, y_test_pos_x, y_test_pos_y, y_test_pos_z = self.create_training_set(test_data)
@@ -167,6 +182,7 @@ class OrbitPredictionModel:
         logger.info("Evaluating models...")
         mse_scores = self.evaluate(x_test, {"pos_x": y_test_pos_x, "pos_y": y_test_pos_y, "pos_z": y_test_pos_z})
         logger.info(f"Mean Squared Errors: {mse_scores}")
+
 
 
 if __name__ == "__main__":

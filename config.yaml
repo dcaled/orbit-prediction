@@ -5,4 +5,8 @@ data:
   path_clean_data: !join [../data/, *OBJECTID, /clean]
   skip_lines: 23
 models:
-  path: ../data/larets/models
+  path_models: ../data/larets/models
+  path_first_position: ../data/larets/first_position.json
+inference:
+  number_of_predictions: 10
+  delta: 60
