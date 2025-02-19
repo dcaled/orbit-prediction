@@ -7,6 +7,7 @@ data:
 models:
   path_models: data/larets/models
   path_first_position: data/larets/first_position.json
+  n_trials: 25
 inference:
   number_of_predictions: 10
   delta: 60
