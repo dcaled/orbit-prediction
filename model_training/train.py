@@ -16,7 +16,6 @@ import pandas as pd
 import optuna
 from typing import Tuple, Dict, Any
 from xgboost import XGBRegressor
-from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error
 from setup_logger import logger
 from utils import load_config
@@ -143,6 +142,7 @@ class OrbitPredictionModel:
 
         return mean_squared_error(y_val, model.predict(X_val))
 
+
     def optimize_model_parameters(self, X_train: pd.DataFrame, y_train: np.ndarray, X_val: pd.DataFrame,
                                   y_val: np.ndarray) -> Dict[str, Any]:
         """
@@ -154,6 +154,7 @@ class OrbitPredictionModel:
         study = optuna.create_study(direction="minimize")
         study.optimize(lambda trial: self.objective(trial, X_train, y_train, X_val, y_val), n_trials=self.n_trials)
         return study.best_params
+
 
     def train_final_model(self, X_train: pd.DataFrame, y_train: np.ndarray, X_val: pd.DataFrame, y_val: np.ndarray,
                           best_params: Dict[str, Any]) -> XGBRegressor:
@@ -170,54 +171,6 @@ class OrbitPredictionModel:
         final_model.fit(X_train_full, y_train_full)
         return final_model
 
-    def fit_model(self, x_train: pd.DataFrame, y_train_pos_x: np.ndarray, y_train_pos_y: np.ndarray,
-                  y_train_pos_z: np.ndarray):
-        """
-        Trains separate Linear Regression models with hyperparameter tuning for each target variable and saves them.
-
-        Args:
-            x_train (pd.DataFrame): Feature matrix.
-            y_train_pos_x, y_train_pos_y, y_train_pos_z (np.ndarray): Target vectors for each position.
-        """
-        # Ensure model directory exists
-        os.makedirs(self.path_models, exist_ok=True)
-
-        # Fit and save model for each target variable
-        self.models["pos_x"] = LinearRegression().fit(x_train, y_train_pos_x)
-        joblib.dump(self.models["pos_x"], os.path.join(self.path_models, "model_pos_x.pkl"))
-
-        self.models["pos_y"] = LinearRegression().fit(x_train, y_train_pos_y)
-        joblib.dump(self.models["pos_y"], os.path.join(self.path_models, "model_pos_y.pkl"))
-
-        self.models["pos_z"] = LinearRegression().fit(x_train, y_train_pos_z)
-        joblib.dump(self.models["pos_z"], os.path.join(self.path_models, "model_pos_z.pkl"))
-
-
-    def predict(self, x_test: pd.DataFrame) -> Dict[str, np.ndarray]:
-        """
-        Predicts outputs for each model.
-
-        Args:
-            x_test (pd.DataFrame): Test feature matrix.
-
-        Returns:
-            Dict[str, np.ndarray]: Predictions for each target variable.
-        """
-        return {col: self.models[col].predict(x_test) for col in self.models}
-
-    def evaluate(self, x_test: pd.DataFrame, y_test: Dict[str, np.ndarray]) -> Dict[str, float]:
-        """
-        Evaluates models using Mean Squared Error.
-
-        Args:
-            x_test (pd.DataFrame): Test feature matrix.
-            y_test (Dict[str, np.ndarray]): True values for the test set.
-
-        Returns:
-            Dict[str, float]: Mean Squared Error for each model.
-        """
-        y_pred = self.predict(x_test)
-        return {col: mean_squared_error(y_test[col], y_pred[col]) for col in self.models}
 
     def save_first_position(self, first_position):
         """
@@ -228,6 +181,7 @@ class OrbitPredictionModel:
         """
         first_position.to_json(self.path_first_position, orient="records", lines=True)
         logger.info(f"First training position saved to {self.path_first_position}")
+
 
     def run_pipeline(self):
         """
