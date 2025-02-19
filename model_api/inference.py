@@ -1,21 +1,22 @@
+import os
 import sys
-sys.path.insert(0, '..')
+sys.path.insert(0, "..")
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 import json
-import os
 import joblib
 import numpy as np
 import pandas as pd
 from typing import Dict, List, Any
+from xgboost import XGBRegressor
 
 from setup_logger import logger
 from utils import load_config
-from sklearn.linear_model import LinearRegression
 
 
 
 class OrbitInference:
-    def __init__(self, config_path="../config.yaml"):
+    def __init__(self, config_path="config.yaml"):
         """
         Initializes the OrbitInference class by loading the configuration and trained models.
 
@@ -34,12 +35,12 @@ class OrbitInference:
         self.path_first_position = self.config["models"]["path_first_position"]
         self.first_position = self.load_first_position()
 
-    def load_models(self) -> Dict[str, LinearRegression]:
+    def load_models(self) -> Dict[str, XGBRegressor]:
         """
         Loads trained models from disk.
 
         Returns:
-            Dict[str, LinearRegression]: Dictionary containing models for each target variable.
+            Dict[str, XGBRegressor]: Dictionary containing models for each target variable.
         """
         models = {}
         for axis in ["pos_x", "pos_y", "pos_z"]:
@@ -92,8 +93,8 @@ class OrbitInference:
             pred_time = epoch_last + (i * self.delta * 1000)
             delta_time = (pred_time - t_min)
 
-            X_pred = pd.DataFrame([[pos_x, pos_y, pos_z, vel_x, vel_y, vel_z, delta_time]],
-                                  columns=["pos_x", "pos_y", "pos_z", "vel_x", "vel_y", "vel_z", "delta_time"])
+            X_pred = pd.DataFrame([[delta_time, pos_x, pos_y, pos_z, vel_x, vel_y, vel_z]],
+                                  columns=["delta", "last_pos_x", "last_pos_y", "last_pos_z", "last_vel_x", "last_vel_y", "last_vel_z"])
 
             prediction = self.predict(X_pred)
             pos_x_pred, pos_y_pred, pos_z_pred = prediction["pos_x"][0], prediction["pos_y"][0], prediction["pos_z"][0]
