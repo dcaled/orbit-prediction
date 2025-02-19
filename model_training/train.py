@@ -34,6 +34,7 @@ class OrbitPredictionModel:
         self.path_first_position = self.config["models"]["path_first_position"]
         self.path_models = self.config["models"]["path_models"]
         self.n_trials = self.config["models"]["n_trials"]
+        self.param_ranges = self.config["models"]["hyperparameters"]
         self.models = {}
         self.best_params = {}
 
@@ -125,16 +126,21 @@ class OrbitPredictionModel:
         """
         # Define the objective function for Optuna
         param = {
-            # Number of gradient boosted trees.
-            "n_estimators": trial.suggest_int("n_estimators", 100, 1000),
-            # Boosting learning rate
-            "learning_rate": trial.suggest_float("learning_rate", 0.01, 0.3),
-            # Maximum tree depth for base learners.
-            "max_depth": trial.suggest_int("max_depth", 3, 10),
-            # Subsample ratio of the training instance.
-            "subsample": trial.suggest_float("subsample", 0.5, 1.0),
-            # Subsample ratio of columns when constructing each tree.
-            "colsample_bytree": trial.suggest_float("colsample_bytree", 0.5, 1.0)
+            "n_estimators": trial.suggest_int("n_estimators",
+                                              self.param_ranges["n_estimators"]["min"],
+                                              self.param_ranges["n_estimators"]["max"]),
+            "learning_rate": trial.suggest_float("learning_rate",
+                                                 self.param_ranges["learning_rate"]["min"],
+                                                 self.param_ranges["learning_rate"]["max"]),
+            "max_depth": trial.suggest_int("max_depth",
+                                           self.param_ranges["max_depth"]["min"],
+                                           self.param_ranges["max_depth"]["max"]),
+            "subsample": trial.suggest_float("subsample",
+                                             self.param_ranges["subsample"]["min"],
+                                             self.param_ranges["subsample"]["max"]),
+            "colsample_bytree": trial.suggest_float("colsample_bytree",
+                                                    self.param_ranges["colsample_bytree"]["min"],
+                                                    self.param_ranges["colsample_bytree"]["max"])
         }
 
         model = XGBRegressor(objective="reg:squarederror", **param)

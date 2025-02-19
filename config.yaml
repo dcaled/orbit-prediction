@@ -8,6 +8,22 @@ models:
   path_models: data/larets/models
   path_first_position: data/larets/first_position.json
   n_trials: 25
+  hyperparameters:
+    n_estimators:
+      min: 100
+      max: 1000
+    learning_rate:
+      min: 0.01
+      max: 0.3
+    max_depth:
+      min: 3
+      max: 10
+    subsample:
+      min: 0.5
+      max: 1.0
+    colsample_bytree:
+      min: 0.5
+      max: 1.0
 inference:
   number_of_predictions: 10
   delta: 60
