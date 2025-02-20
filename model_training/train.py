@@ -20,6 +20,8 @@ from sklearn.metrics import mean_squared_error
 from setup_logger import logger
 from utils import load_config
 
+optuna.logging.set_verbosity(optuna.logging.WARNING)
+
 
 class OrbitPredictionModel:
     def __init__(self, config_path: str):
@@ -36,7 +38,6 @@ class OrbitPredictionModel:
         self.n_trials = self.config["models"]["n_trials"]
         self.param_ranges = self.config["models"]["hyperparameters"]
         self.models = {}
-        self.best_params = {}
 
 
     def load_orbits_from_folder(self) -> pd.DataFrame:
@@ -150,16 +151,17 @@ class OrbitPredictionModel:
 
 
     def optimize_model_parameters(self, X_train: pd.DataFrame, y_train: np.ndarray, X_val: pd.DataFrame,
-                                  y_val: np.ndarray) -> Dict[str, Any]:
+                                  y_val: np.ndarray) -> Tuple[Dict[str, Any], float]:
         """
         Optimizes hyperparameters using Optuna.
 
-        Returns:
-            Dict[str, Any]: Best hyperparameters found.
+        Tuple[Dict[str, Any], float]:
+            - Best hyperparameters found.
+            - Corresponding best objective function value.
         """
         study = optuna.create_study(direction="minimize")
         study.optimize(lambda trial: self.objective(trial, X_train, y_train, X_val, y_val), n_trials=self.n_trials)
-        return study.best_params
+        return study.best_params, study.best_value
 
 
     def train_final_model(self, X_train: pd.DataFrame, y_train: np.ndarray, X_val: pd.DataFrame, y_val: np.ndarray,
@@ -208,8 +210,8 @@ class OrbitPredictionModel:
         logger.info("Optimizing and training models...")
         for axis in ["pos_x", "pos_y", "pos_z"]:
             logger.info(f"Optimizing model for {axis}...")
-            best_params = self.optimize_model_parameters(X_train, y_train[axis], X_val, y_val[axis])
-            logger.info(f"Best hyperparameters for {axis}: {best_params}")
+            best_params, best_value = self.optimize_model_parameters(X_train, y_train[axis], X_val, y_val[axis])
+            logger.info(f"Best hyperparameters for {axis}: {best_params}. MSE: {best_value}")
 
             logger.info(f"Training final model for {axis} on the full dataset.")
             final_model = self.train_final_model(X_train, y_train[axis], X_val, y_val[axis], best_params)
