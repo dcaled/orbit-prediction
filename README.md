@@ -34,19 +34,44 @@ python data_processing\preprocess.py
 
 ## 2. Model training
 
+This project utilizes XGBoost Regression optimized with Optuna to predict the future positions of a space object based on historical trajectory data. Below is the configuration used for training and storing models.
+
 To train a model, you should configure the file `config.yaml` with the following parameters:
 
-Path to where you store the clean data. Example:
-```
-data:
-   path_clean_data: data/{space-object-id}/clean
-```
+- `path`: Specifies where the trained models should be saved. `{space-object-id}` is a placeholder for the unique identifier of the space-object. 
+- `path_first_position`: The location of the file that stores the first recorded position of the space-object.
+- `n_trials`: Defines the number of trials Optuna will run to find the best hyperparameters.
+- `hyperparameters`: Defines the range of values that Optuna will explore when tuning the hyperparameters of the XGBoost model.
+  - `n_estimators` (100 - 1000): Number of decision trees (boosted trees) in the model.
+  - `learning_rate` (0.01 - 0.3): Controls how much each tree contributes to the final prediction.
+  - `max_depth` (3 - 10): Maximum depth of each decision tree.
+  - `subsample` (0.5 - 1.0): The fraction of training samples used to build each tree.
+  - `colsample_bytree` (0.5 - 1.0): The fraction of features (columns) used per tree.
 
-Path to where the new models should be stored. Example:
+Example:
 ```
 models:
   path: data/{space-object-id}/models
+  path_first_position: data/{space-object-id}/first_position.json
+  n_trials: 25
+  hyperparameters:
+    n_estimators:
+      min: 100
+      max: 1000
+    learning_rate:
+      min: 0.01
+      max: 0.3
+    max_depth:
+      min: 3
+      max: 10
+    subsample:
+      min: 0.5
+      max: 1.0
+    colsample_bytree:
+      min: 0.5
+      max: 1.0
 ```
+
 
 ### 2.1. Running model training
 
